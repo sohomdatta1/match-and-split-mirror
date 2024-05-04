@@ -197,7 +197,7 @@ def do_split(mysite, rootname, user, codelang):
     except:
         return ret_val(E_ERROR, "unable to read page")
 
-    p = re.compile('==\[\[(' + prefix + ':[^=]+)\]\]==\n')
+    p = re.compile(r'==\[\[(' + prefix + r':[^=]+)\]\]==\n')
     bl = p.split(text)
     titles = '\n'
 
@@ -223,7 +223,7 @@ def do_split(mysite, rootname, user, codelang):
 
         pl = pywikibot.proofreadpage.ProofreadPage(mysite, pagetitle)
 
-        m =  re.match(prefix + ':(.*?)/(\d+)', pagetitle)
+        m =  re.match(prefix + r':(.*?)/(\d+)', pagetitle)
         if m:
             filename = m.group(1)
             pagenum = int(m.group(2))
