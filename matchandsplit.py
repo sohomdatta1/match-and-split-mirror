@@ -84,12 +84,12 @@ def do_match(mysite, maintitle, user, codelang):
     if text.find("{{R2Mondes")!=-1:
         global pl_dict
         pl_dict = {}
-        p0 = re.compile("\{\{R2Mondes\|(\d+)\|(\d+)\|(\d+)\}\}\s*\n")
+        p0 = re.compile(r"\{\{R2Mondes\|(\d+)\|(\d+)\|(\d+)\}\}\s*\n")
         try:
             new_text = p0.sub(repl, text)
         except pywikibot.exceptions.NoPageError:
             return ret_val(E_ERROR, "Erreur : impossible de trouver l'index")
-        p = re.compile('==\[\[Page:([^=]+)\]\]==\n')
+        p = re.compile(r'==\[\[Page:([^=]+)\]\]==\n')
 
         bl= p.split(new_text)
         for i in range(len(bl)//2):
@@ -103,7 +103,7 @@ def do_match(mysite, maintitle, user, codelang):
             if not cached_text:
                 return ret_val(E_ERROR, "Erreur : fichier absent")
             if content.find("R2Mondes") != -1:
-                p0 = re.compile("\{\{R2Mondes\|\d+\|\d+\|(\d+)\}\}\s*\n")
+                p0 = re.compile(r"\{\{R2Mondes\|\d+\|\d+\|(\d+)\}\}\s*\n")
                 bl0 = p0.split(text)
                 title0 = bl0[i*2+1].encode("utf8")
                 return ret_val(E_ERROR, "Erreur : Syntaxe 'R2Mondes' incorrecte, dans la page "+title0)
@@ -112,35 +112,35 @@ def do_match(mysite, maintitle, user, codelang):
             if r < 0.1:
                 return ret_val(E_ERROR, "Erreur : Le texte ne correspond pas, page %s" % pagenum)
         #the page is ok
-        new_text = re.sub('<references[ ]*/>', '', new_text)
-        new_text = re.sub('[ ]([,])', '\\1', new_text)
-        new_text = re.sub('([^.])[ ]([,.])', '\\1\\2', new_text)
-        new_text = re.sub('\.\.\.', '…', new_text)
+        new_text = re.sub(r'<references[ ]*/>', '', new_text)
+        new_text = re.sub(r'[ ]([,])', '\\1', new_text)
+        new_text = re.sub(r'([^.])[ ]([,.])', '\\1\\2', new_text)
+        new_text = re.sub(r'\.\.\.', '…', new_text)
 
-        new_text = re.sub('([^ \s])([;:!?])', '\\1 \\2', new_text)
-        new_text = re.sub('([«;:!?])([^ \s…])', '\\1 \\2', new_text)
+        new_text = re.sub(r'([^ \s])([;:!?])', '\\1 \\2', new_text)
+        new_text = re.sub(r'([«;:!?])([^ \s…])', '\\1 \\2', new_text)
         # separated from the previous regexp else "word!»" overlap
-        new_text = re.sub('([^ \s])([»])', '\\1 \\2', new_text)
+        new_text = re.sub(r'([^ \s])([»])', '\\1 \\2', new_text)
 
         # workaround some buggy text
-        new_text = re.sub('([;:!?»]) \n', '\\1\n', new_text)
-        new_text = re.sub('([;:!?»])\'\'([ \n])', '\\1\'\'\\2', new_text)
+        new_text = re.sub(r'([;:!?»]) \n', '\\1\n', new_text)
+        new_text = re.sub('r([;:!?»])\'\'([ \n])', '\\1\'\'\\2', new_text)
         # <&nbsp;><space>
         #new_text = re.sub('  ([;:!?»])', ' \\1', new_text)
         #new_text = re.sub(' ([;:!?»])', ' \\1', new_text)
-        new_text = re.sub('([;:!?»]) <br />', '\\1<br />', new_text)
-        new_text = new_text.replace('Page : ', 'Page:')
-        new_text = new_text.replace('\n: ', '\n:')
-        new_text = new_text.replace('\n:: ', '\n::')
-        new_text = new_text.replace('\n::: ', '\n:::')
-        new_text = new_text.replace('\n:::: ', '\n::::')
-        new_text = new_text.replace('\n::::: ', '\n:::::')
-        new_text = re.sub('1er (janvier|février|avril|mars|mai|juin|juillet|août|septembre|octobre|novembre|décembre)', '1{{er}} \\1', new_text)
-        new_text = re.sub('([0-9])e ', '\\1{{e}} ', new_text)
+        new_text = re.sub(r'([;:!?»]) <br />', '\\1<br />', new_text)
+        new_text = new_text.replace(r'Page : ', 'Page:')
+        new_text = new_text.replace(r'\n: ', '\n:')
+        new_text = new_text.replace(r'\n:: ', '\n::')
+        new_text = new_text.replace(r'\n::: ', '\n:::')
+        new_text = new_text.replace(r'\n:::: ', '\n::::')
+        new_text = new_text.replace(r'\n::::: ', '\n:::::')
+        new_text = re.sub(r'1er (janvier|février|avril|mars|mai|juin|juillet|août|septembre|octobre|novembre|décembre)', '1{{er}} \\1', new_text)
+        new_text = re.sub(r'([0-9])e ', '\\1{{e}} ', new_text)
         #text = re.sub('([;:!?»]) <div>\n', '\\1\n', new_text)
 
         # try to move the title inside the M&S
-        match_title = re.search(u"{{[Jj]ournal[ ]*\|*(.*?)\|", new_text)
+        match_title = re.search(r"{{[Jj]ournal[ ]*\|*(.*?)\|", new_text)
         if match_title:
             pos = re.search('==(.*?)==', new_text)
             if pos:
