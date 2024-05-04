@@ -1,0 +1,10 @@
+# https://wikitech.wikimedia.org/wiki/Help:Toolforge/Jobs_framework
+---
+- name: "matchandsplit"
+  command: "matchandsplit"
+  image: tool-matchandsplit/tool-matchandsplit:latest
+  continuous: true
+  health-check-script: "launcher ping"
+  emails: all
+  mem: 3Gi
+  cpu: "2"
