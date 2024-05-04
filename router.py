@@ -1,4 +1,4 @@
-from flask import request
+from flask import request, jsonify
 from app import flask_app as app
 from matchandsplit import match, split
 
@@ -8,7 +8,9 @@ def match_route():
     title = request.form['title']
     username = request.form['username']
     match.delay(lang, title, username)
-    return {'status': 'recieved'}
+    r = jsonify({'status': 'recieved'})
+    r.headers['Access-Control-Allow-Origin'] = '*'
+    return r
 
 @app.route('/split', methods=['POST'])
 def split_route():
@@ -16,7 +18,9 @@ def split_route():
     title = request.form['title']
     username = request.form['username']
     split.delay(lang, title, username)
-    return {'status': 'recieved'}
+    r = jsonify({'status': 'recieved'})
+    r.headers['Access-Control-Allow-Origin'] = '*'
+    return r
 
 @app.route('/')
 def index():
