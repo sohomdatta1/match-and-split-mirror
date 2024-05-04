@@ -18,5 +18,9 @@ def split_route():
     split.delay(lang, title, username)
     return {'status': 'recieved'}
 
+@app.route('/', methods=['GET'])
+def index():
+    return """This is experimental API for match and split. /match and /split are the endpoints."""
+
 if __name__ == '__main__':
     app.run(debug=True, host='0.0.0.0', port=1238)
