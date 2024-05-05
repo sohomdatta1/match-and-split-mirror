@@ -63,7 +63,7 @@
     <form id="splitForm">
       <div class="form-group">
         <label for="language">Language:</label>
-        <input type="text" id="language" name="language" required>
+        <input type="text" id="lang" name="lang" required>
       </div>
       <div class="form-group">
         <label for="title">Title:</label>
@@ -83,16 +83,10 @@
       event.preventDefault();
       var form = this;
       var formData = new FormData(form);
-      var object = {};
-      formData.forEach((value, key) => object[key] = value);
-      var json = JSON.stringify(object);
 
       fetch('/match', {
-        headers: {
-          'Content-Type': 'application/json'
-        },
         method: 'POST',
-        body: json
+        body: new URLSearchParams(formData)
       })
       .then(function(response) {
         return response.json();

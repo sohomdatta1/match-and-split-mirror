@@ -5,3 +5,4 @@ __pycache__/
 *.pdf
 user-config.py
 throttle.ctrl
+.env
