@@ -33,6 +33,10 @@ def all_status():
     rowtmpl = '<tr><td>$name</td><td>$1</td><td>$2</td><td>$3</td></tr>'
     for task in inspect.active()['worker@mas-sodium']:
         table += rowtmpl.replace('$name', task['name']).replace('$1', task['args'][0]).replace('$2', task['args'][1]).replace('$3', task['args'][2])
+    for task in inspect.reserved()['worker@mas-sodium']:
+        table += rowtmpl.replace('$name', task['name']).replace('$1', task['args'][0]).replace('$2', task['args'][1]).replace('$3', task['args'][2])
+    for task in inspect.scheduled()['worker@mas-sodium']:
+        table += rowtmpl.replace('$name', task['name']).replace('$1', task['args'][0]).replace('$2', task['args'][1]).replace('$3', task['args'][2])
     table += '</tbody></table>'
     return html + start + table
 
