@@ -58,25 +58,26 @@
 </head>
 <body>
 
-  <div class="container">
+<div class="container">
     <h1>Run the split operation on a specific page</h1>
-    <form id="splitForm">
-      <div class="form-group">
-        <label for="language">Language:</label>
+    <form id="matchForm">
+        <div class="form-group">
+        <label for="language">Language code (i.e. en, bn, fr etc):</label>
         <input type="text" id="lang" name="lang" required>
-      </div>
-      <div class="form-group">
-        <label for="title">Title:</label>
+        </div>
+        <div class="form-group">
+        <label for="title">Title of page:</label>
         <input type="text" id="title" name="title" required>
-      </div>
-      <div class="form-group">
-        <label for="username">Username:</label>
+        </div>
+        <div class="form-group">
+        <label for="username">Your username:</label>
         <input type="text" id="username" name="username" required>
-      </div>
-      <button type="submit">Submit</button>
+        </div>
+        <button type="submit">Submit</button>
     </form>
     <div id="response"></div>
-  </div>
+</div>
+
 
   <script>
     document.getElementById('splitForm').addEventListener('submit', function(event) {
