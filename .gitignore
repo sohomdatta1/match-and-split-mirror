@@ -3,3 +3,5 @@ apicache/
 __pycache__/
 *.djvu
 *.pdf
+user-config.py
+throttle.ctrl
