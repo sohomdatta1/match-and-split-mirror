@@ -83,10 +83,15 @@
       event.preventDefault();
       var form = this;
       var formData = new FormData(form);
+      formData.forEach((value, key) => object[key] = value);
+      var json = JSON.stringify(object);
 
       fetch('/match', {
+        headers: {
+          'Content-Type': 'application/json'
+        },
         method: 'POST',
-        body: formData
+        body: json
       })
       .then(function(response) {
         return response.json();
