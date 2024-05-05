@@ -83,6 +83,7 @@
       event.preventDefault();
       var form = this;
       var formData = new FormData(form);
+      var object = {};
       formData.forEach((value, key) => object[key] = value);
       var json = JSON.stringify(object);
 
