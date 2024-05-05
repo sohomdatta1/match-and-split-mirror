@@ -29,12 +29,12 @@ def get_pl(year, vol):
     site = pywikibot.Site('fr', 'wikisource')
     indexpage = pywikibot.Page(site, "Livre:" + rddm_name(year, vol))
     text = indexpage.get()
-    m = re.search("(?ms)<pagelist\s+(.*?)/>",text)
+    m = re.search(r"(?ms)<pagelist\s+(.*?)/>",text)
     if m:
         el = m.group(1).split()
         l = []
         for item in el:
-            mm = re.match("(\d+)=(\d+)",item)
+            mm = re.match(r"(\d+)=(\d+)",item)
             if mm:
                 l.append( (int(mm.group(1)), int(mm.group(2)) ) )
 
@@ -150,7 +150,7 @@ def do_match(mysite, maintitle, user, codelang):
         split.delay(maintitle, codelang, user)
         return ret_val(E_ERROR, "ok : transfert en cours.")
 
-    p = re.compile("==__MATCH__:\[\[" + prefix + ":(.*?)/(\d+)(\|step=(\d+))?\]\]==")
+    p = re.compile(r"==__MATCH__:\[\[" + prefix + r":(.*?)/(\d+)(\|step=(\d+))?\]\]==")
     m = re.search(p,text)
     if m:
         djvuname = m.group(1)
@@ -283,20 +283,20 @@ def do_split(mysite, rootname, user, codelang):
                     content = "<noinclude>"+m.group(1)+"</noinclude><section begin=s1/>"+first_part+"<section end=s1/>\n----\n" \
                         + "<section begin=s2/>"+second_part+"<section end=s2/><noinclude>"+m.group(3)+"</noinclude>"
             else:
-                m = re.match("<noinclude><pagequality level=\"1\" user=\"(.*?)\" />(.*?)</noinclude>(.*)<noinclude>(.*?)</noinclude>",
+                m = re.match(r"<noinclude><pagequality level=\"1\" user=\"(.*?)\" />(.*?)</noinclude>(.*)<noinclude>(.*?)</noinclude>",
                              old_text,re.MULTILINE|re.DOTALL)
                 if m :
                     print("ok, quality 1, first try")
                     content = "<noinclude><pagequality level=\"1\" user=\"" + m.group(1) + "\" />"+m.group(2)+"</noinclude>"+content+"<noinclude>"+m.group(4)+"</noinclude>"
-                    m2 = re.match("<noinclude>\{\{PageQuality\|1\|(.*?)\}\}(.*?)</noinclude>(.*)<noinclude>(.*?)</noinclude>",
+                    m2 = re.match(r"<noinclude>\{\{PageQuality\|1\|(.*?)\}\}(.*?)</noinclude>(.*)<noinclude>(.*?)</noinclude>",
                                   old_text,re.MULTILINE|re.DOTALL)
                     if m2 :
                         # FIXME: shouldn't use an hardcoded name here
                         print("ok, quality 1, second try")
-                        content = "<noinclude><pagequality level=\"1\" user=\"Phe-bot\" />"+m2.group(2)+"</noinclude>"+content+"<noinclude>"+m2.group(4)+"</noinclude>"
+                        content = "<noinclude><pagequality level=\"1\" user=\"SodiumBot\" />"+m2.group(2)+"</noinclude>"+content+"<noinclude>"+m2.group(4)+"</noinclude>"
 
         else:
-            header = '<noinclude><pagequality level="1" user="Phe-bot" /></noinclude>'
+            header = '<noinclude><pagequality level="1" user="SodiumBot" /></noinclude>'
             footer = '<noinclude></noinclude>'
             content = header + content + footer
             
@@ -316,7 +316,7 @@ def do_split(mysite, rootname, user, codelang):
 
     if fromsection and fromsection_page:
         rtext = fromsection_page.get()
-        m = re.search("<pages index=\"(.*?)\" from=(.*?) to=(.*?) (fromsection=s2 |)/>",rtext)
+        m = re.search(r"<pages index=\"(.*?)\" from=(.*?) to=(.*?) (fromsection=s2 |)/>",rtext)
         if m and m.group(1)==group:
             rtext = rtext.replace(m.group(0), m.group(0)[:-2]+"tosection=s1 />" )
             print("new rtext")
@@ -324,7 +324,7 @@ def do_split(mysite, rootname, user, codelang):
 
     if tosection and tosection_page:
         rtext = tosection_page.get()
-        m = re.search("<pages index=\"(.*?)\" from=(.*?) to=(.*?) (tosection=s1 |)/>",rtext)
+        m = re.search(r"<pages index=\"(.*?)\" from=(.*?) to=(.*?) (tosection=s1 |)/>",rtext)
         if m and m.group(1)==group:
             rtext = rtext.replace(m.group(0), m.group(0)[:-2]+"fromsection=s2 />" )
             print("new rtext")
