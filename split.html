@@ -60,7 +60,7 @@
 
 <div class="container">
     <h1>Run the split operation on a specific page</h1>
-    <form id="matchForm">
+    <form id="splitForm">
         <div class="form-group">
         <label for="language">Language code (i.e. en, bn, fr etc):</label>
         <input type="text" id="lang" name="lang" required>
@@ -85,7 +85,7 @@
       var form = this;
       var formData = new FormData(form);
 
-      fetch('/match', {
+      fetch('/split', {
         method: 'POST',
         body: new URLSearchParams(formData)
       })
