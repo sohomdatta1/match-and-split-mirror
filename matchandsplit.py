@@ -258,11 +258,10 @@ def do_split(mysite, rootname, user, codelang):
         if pl.exists():
             old_text = pl.get()
 #            refs = pl.getReferences(onlyTemplateInclusion = True)
-            refs = pl.getReferences(only_template_inclusion = True)
+            refs = pl.getReferences(only_template_inclusion = True, namespaces=[0])
             numrefs = 0
             for ref in refs:
                 numrefs += 1
-
             #first and last pages : check if they are transcluded
             if numrefs > 0 :
                 m = re.match("<noinclude>(.*?)</noinclude>(.*)<noinclude>(.*?)</noinclude>",old_text,re.MULTILINE|re.DOTALL)
@@ -303,11 +302,11 @@ def do_split(mysite, rootname, user, codelang):
 
         do_put = True
         if pl.exists():
-            if hasattr(pl, '_quality') and pl.quality_level != 1:
+            if pl.ql != 1:
                 print("quality != 1, not saved")
                 do_put = False
             else:
-                print("can't get quality level")
+                print(f"quality level= {pl.ql}")
         if do_put:
             safe_put(pl,content,user+": split")
 
