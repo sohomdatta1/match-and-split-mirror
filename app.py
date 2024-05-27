@@ -1,9 +1,16 @@
 from flask import Flask
 from celery_init import celery_init_app
 from redis_init import redis_url, REDIS_KEY_PREFIX
+from blueprint import assets_blueprint
 
 def create_app() -> Flask:
-    app = Flask(__name__)
+    app = Flask(__name__,
+        static_url_path="/",
+        static_folder="public",
+        template_folder="templates",
+    )
+
+    app.register_blueprint(assets_blueprint)
     app.config.from_mapping(
         CELERY=dict(
             broker_url=redis_url,

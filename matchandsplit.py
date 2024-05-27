@@ -5,6 +5,10 @@ from celery import shared_task
 from app import celery as celery_app
 import align
 import utils
+from toolsdb import get_conn
+from uuid import uuid4 as uuid
+from logger import Logger
+import sys
 
 import pywikibot
 
@@ -67,18 +71,20 @@ def ret_val(error, text):
 
 # FIXME, here and everywhere, can't we use mysite.lang and mysite.family.name
 # to remove some parameters, does this work for old wikisource?
-def do_match(mysite, maintitle, user, codelang):
+def do_match(mysite, maintitle, user, codelang, logger):
     prefix = page_prefixes['wikisource'].get(codelang)
     if not prefix:
+        logger.log("no prefix")
         return ret_val(E_ERROR, "no prefix")
 
     print("M&S:do_match() called with mysite = ", mysite, "maintitle = ", maintitle, "user = ", user, "codelang = ", codelang, "and prefix =", prefix)
+    logger.log("M&S:do_match() called with mysite = " + str(mysite) + "maintitle = " + str(maintitle) + "user = " + str(user) + "codelang = " + str(codelang) + "and prefix =" + str(prefix))
 
     page = pywikibot.Page(mysite, maintitle)
     try:
         text = page.get()
     except:
-        utils.print_traceback("failed to get page")
+        utils.print_traceback("failed to get page", logger)
         return ret_val(E_ERROR, "failed to get page")
 
     if text.find("{{R2Mondes")!=-1:
@@ -88,6 +94,7 @@ def do_match(mysite, maintitle, user, codelang):
         try:
             new_text = p0.sub(repl, text)
         except pywikibot.exceptions.NoPageError:
+            logger.log("Erreur : impossible de trouver l'index")
             return ret_val(E_ERROR, "Erreur : impossible de trouver l'index")
         p = re.compile(r'==\[\[Page:([^=]+)\]\]==\n')
 
@@ -97,19 +104,23 @@ def do_match(mysite, maintitle, user, codelang):
             content = bl[i*2+2]
             filename, pagenum = title.split('/')
             if i == 0:
-                cached_text = align.get_djvu(mysite, filename)
+                cached_text = align.get_djvu(mysite, filename, logger)
             else:
-                cached_text = align.get_djvu(mysite, filename)
+                cached_text = align.get_djvu(mysite, filename, logger)
             if not cached_text:
+                logger.log("Erreur : fichier absent, no cached_text")
                 return ret_val(E_ERROR, "Erreur : fichier absent")
             if content.find("R2Mondes") != -1:
                 p0 = re.compile(r"\{\{R2Mondes\|\d+\|\d+\|(\d+)\}\}\s*\n")
                 bl0 = p0.split(text)
                 title0 = bl0[i*2+1].encode("utf8")
+                logger.log("Erreur : Syntaxe 'R2Mondes' incorrecte, dans la page "+title0)
                 return ret_val(E_ERROR, "Erreur : Syntaxe 'R2Mondes' incorrecte, dans la page "+title0)
             r = align.match_page(content, cached_text[int(pagenum)-1])
+            logger.log("%s %s  : %f" % (filename, pagenum, r))
             print("%s %s  : %f" % (filename, pagenum, r))
             if r < 0.1:
+                logger.log("Erreur : Le texte ne correspond pas, page %s" % pagenum)
                 return ret_val(E_ERROR, "Erreur : Le texte ne correspond pas, page %s" % pagenum)
         #the page is ok
         new_text = re.sub(r'<references[ ]*/>', '', new_text)
@@ -146,7 +157,7 @@ def do_match(mysite, maintitle, user, codelang):
             if pos:
                 new_text = new_text[0:pos.end(0)] + '\n{{c|' + match_title.group(1) + '|fs=140%}}\n\n\n' + new_text[pos.end(0):]
 
-        safe_put(page,new_text,user+": match")
+        safe_put(page,new_text,user+": match", logger)
         split.delay(maintitle, codelang, user)
         return ret_val(E_ERROR, "ok : transfert en cours.")
 
@@ -162,39 +173,47 @@ def do_match(mysite, maintitle, user, codelang):
             try:
                 step = int(m.group(4))
             except:
+                logger.log("Error : __MATCH__ : tag invalid")
                 return ret_val(E_ERROR, "match tag invalid")
         else:
             step = 1
     else:
+        logger.log("Error : __MATCH__ : tag not found")
         return ret_val(E_ERROR, "match tag not found")
 
+    logger.log(djvuname + " " + number + " " + str(step))
     pywikibot.output(djvuname + " " + number + " " + str(step))
     try:
         number = int(number)
     except:
+        logger.log("Error : __MATCH__ : no page number")
         return ret_val(E_ERROR, "illformed __MATCH__: no page number ?")
 
-    cached_text = align.get_djvu(mysite, djvuname)
+    cached_text = align.get_djvu(mysite, djvuname, logger)
     if not cached_text:
+        logger.log("Error : unable to read djvu, if the File: exists, please retry")
         return ret_val(E_ERROR, "unable to read djvu, if the File: exists, please retry")
 
-    data = align.do_match(text, cached_text, djvuname, number, verbose = False, prefix = prefix, step = step)
+    data = align.do_match(text, cached_text, djvuname, number, verbose = False, prefix = prefix, step = step, logger = logger)
     if not data['error']:
-        safe_put(page, head + data['text'], user + ": match")
+        safe_put(page, head + data['text'], user + ": match", logger)
         data['text'] = ""
 
     return data
 
-def do_split(mysite, rootname, user, codelang):
+def do_split(mysite, rootname, user, codelang, logger):
     prefix = page_prefixes['wikisource'].get(codelang)
     if not prefix:
+        logger.log("no Page: prefix")
         return ret_val(E_ERROR, "no Page: prefix")
+    logger.log("M&S:do_split() called with mysite = " + str(mysite) + "rootname = " + str(rootname) + "user = " + str(user) + "codelang = " + str(codelang) + "and prefix =" + str(prefix))
     print("M&S:do_split() called with mysite = ", mysite, "rootname = ", rootname, "user = ", user, "codelang = ", codelang, "and prefix =", prefix)
 
     try:
         page = pywikibot.Page(mysite, rootname)
         text = page.get()
     except:
+        utils.print_traceback("unable to read page", logger)
         return ret_val(E_ERROR, "unable to read page")
 
     p = re.compile(r'==\[\[(' + prefix + r':[^=]+)\]\]==\n')
@@ -303,12 +322,14 @@ def do_split(mysite, rootname, user, codelang):
         do_put = True
         if pl.exists():
             if pl.ql != 1:
+                logger.log("quality != 1, not saved")
                 print("quality != 1, not saved")
                 do_put = False
             else:
+                logger.log("quality level= %d" % pl.ql)
                 print(f"quality level= {pl.ql}")
         if do_put:
-            safe_put(pl,content,user+": split")
+            safe_put(pl,content,user+": split", logger)
 
     if group:
         titles = titles + "<pages index=\"%s\" from=%d to=%d %s%s/>\n"%(group,pfrom,pto,fromsection,tosection)
@@ -319,7 +340,7 @@ def do_split(mysite, rootname, user, codelang):
         if m and m.group(1)==group:
             rtext = rtext.replace(m.group(0), m.group(0)[:-2]+"tosection=s1 />" )
             print("new rtext")
-            safe_put(fromsection_page,rtext,user+": split")
+            safe_put(fromsection_page,rtext,user+": split", logger)
 
     if tosection and tosection_page:
         rtext = tosection_page.get()
@@ -327,21 +348,39 @@ def do_split(mysite, rootname, user, codelang):
         if m and m.group(1)==group:
             rtext = rtext.replace(m.group(0), m.group(0)[:-2]+"fromsection=s2 />" )
             print("new rtext")
-            safe_put(tosection_page,rtext,user+": split")
+            safe_put(tosection_page,rtext,user+": split", logger)
 
     header = bl[0]
-    safe_put(page,header+titles,user+": split")
+    safe_put(page,header+titles,user+": split", logger)
 
     return ret_val(E_OK, "")
-
-
 
 @shared_task
 def match(lang, title, username) -> None:
     site = pywikibot.Site(lang, 'wikisource')
-    do_match(site, title, username, lang)
+    log_file = f'{uuid()}.log'
+    logger = Logger(log_file)
+    with get_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('''UPDATE jobs SET status = 'running', logfile = %s WHERE type = 'match' AND lang = %s AND title = %s AND username = %s''', (log_file, lang, title, username))
+        conn.commit()
+    do_match(site, title, username, lang, logger)
+    with get_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('''UPDATE jobs SET status = 'done' WHERE type = 'match' AND lang = %s AND title = %s AND username = %s''', (lang, title, username))
+        conn.commit()
 
 @shared_task
 def split(lang, title, username) -> None:
     site = pywikibot.Site(lang,'wikisource')
-    do_split(site, title, username, lang)
+    log_file = f'{uuid()}.log'
+    logger = Logger(log_file)
+    with get_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('''UPDATE jobs SET status = 'running', logfile = %s WHERE type = 'split' AND lang = %s AND title = %s AND username = %s''', (log_file, lang, title, username))
+        conn.commit()
+    do_split(site, title, username, lang, logger)
+    with get_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('''UPDATE jobs SET status = 'done' WHERE type = 'split' AND lang = %s AND title = %s AND username = %s''', (lang, title, username))
+        conn.commit()

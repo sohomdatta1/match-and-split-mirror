@@ -10,6 +10,7 @@ import pywikibot
 import utils
 import copy_file
 import subprocess
+from pypdf import PdfReader
 
 def match_page(target, source):
     s = difflib.SequenceMatcher()
@@ -44,6 +45,12 @@ def extract_djvu_text(url, filename, sha1):
     data = []
     # GTK app are very touchy
     os.environ['LANG'] = 'en_US.UTF8'
+    if filename.endswith('.pdf'):
+        pdf = PdfReader(filename)
+        for page in pdf.pages:
+            data.append(page.extract_text())
+        os.remove(filename)
+        return sha1, data
     # FIXME: check return code
     ls = subprocess.Popen([ 'djvutxt', filename, '--detail=page'], stdout=subprocess.PIPE, close_fds = True)
     text = ls.stdout.read()
@@ -78,7 +85,7 @@ E_ERROR = 1
 E_OK = 0
 
 # returns result, status
-def do_match(target, cached_text, djvuname, number, verbose, prefix, step):
+def do_match(target, cached_text, djvuname, number, verbose, prefix, step, logger):
     s = difflib.SequenceMatcher()
     offset = 0
     output = ""
@@ -91,11 +98,13 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step):
     try:
         last_page = cached_text[number - ((step+1)//2)]
     except:
+        logger.log("Unable to retrieve text layer for page: " + str(number))
         return ret_val(E_ERROR, "Unable to retrieve text layer for page: " + str(number))
 
     for pagenum in range(number, min(number + 1000, len(cached_text)), step):
 
         if pagenum - number == 10 and offset == 0:
+            logger.log("Error: could not find a text layer.")
             return ret_val(E_ERROR, "error : could not find a text layer.")
 
         page1 = last_page
@@ -116,6 +125,7 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step):
 
         mb = s.get_matching_blocks()
         if len(mb) < 2:
+            logger.log("LEN(MB) < 2, breaking")
             print("LEN(MB) < 2, breaking")
             break
         ccc = mb[-2]
@@ -125,6 +135,7 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step):
         #print i, ccc, ratio
 
         if ratio < 0.1:
+            logger.log("low ratio", ratio)
             print("low ratio", ratio)
             break
         mstr = ""
@@ -145,6 +156,8 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step):
                     mstr = mstr + ss + ftext1[2*i+1]
         if verbose:
             pywikibot.output(mstr)
+            logger.log(mstr)
+            logger.log("====================================")
             print("--------------------------------")
 
         mstr = ""
@@ -168,6 +181,8 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step):
                     no_color = no_color + ftext2[2*i] + ftext2[2*i+1]
         if verbose:
             pywikibot.output(mstr)
+            logger.log(mstr)
+            logger.log("====================================")
             print("====================================")
 
         if is_poem:
@@ -208,6 +223,7 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step):
         output = ""
 
     if output == "":
+        logger.log("text does not match")
         return ret_val(E_ERROR, "text does not match")
     else:
         return ret_val(E_OK, output)
@@ -216,9 +232,10 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step):
 # file with the same name but different contents. In this case the cache will
 # be ineffective but no wrong data can be used as we check its sha1.
 # SOHOM: Remove caching
-def get_djvu(mysite, djvuname):
+def get_djvu(mysite, djvuname, logger):
 
     print("get_djvu", repr(djvuname))
+    logger.log("get_djvu: %s" % djvuname)
 
     djvuname = djvuname.replace(" ", "_")
     filepage = copy_file.get_filepage(mysite, djvuname)
@@ -232,7 +249,7 @@ def get_djvu(mysite, djvuname):
 #            obj = extract_djvu_text(url, djvuname, filepage.getFileSHA1Sum())
         obj = extract_djvu_text(url, djvuname, filepage.latest_file_info.sha1)
     except:
-        utils.print_traceback("extract_djvu_text() fail")
+        utils.print_traceback(logger, "extract_djvu_text() fail")
         obj = None
 
     return obj[1]

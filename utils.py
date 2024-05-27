@@ -164,14 +164,19 @@ def safe_write(fd, text):
     return _retry_on_eintr(fd.write, text)
 
 def print_traceback(*kwargs):
+    logger = kwargs[-1]
+    kwargs = kwargs[:-1]
     import traceback
     try:
-        traceback.print_exc()
+        traceback.print_exc(file=logger.get_file_handler())
+        traceback.print_exc(file=sys.stderr)
         if len(kwargs):
+            print("arguments:", file=logger.get_file_handler())
             print("arguments:", file=sys.stderr)
             for f in kwargs:
                 if type(f) == type(u''):
                     f = f.encode('utf-8')
+                print(f, file=logger.get_file_handler())
                 print(str(f), file=sys.stderr)
     except:
         print("ERROR: An exception occured during traceback", file=sys.stderr)
