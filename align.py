@@ -90,7 +90,7 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step, logge
     offset = 0
     output = ""
     is_poem = False
-    logger.log("Cached text =" + str(cached_text))
+    logger.log("Cached text =" + str('\n'.join(cached_text)))
 #    print(number, file=sys.stderr)
 #    print(step, file=sys.stderr)
 #    print(((step+1)//2), file=sys.stderr)
