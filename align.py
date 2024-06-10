@@ -10,7 +10,7 @@ import pywikibot
 import utils
 import copy_file
 import subprocess
-from pypdf import PdfReader
+import pymupdf
 
 def match_page(target, source):
     s = difflib.SequenceMatcher()
@@ -46,11 +46,11 @@ def extract_djvu_text(url, filename, sha1, logger):
     # GTK app are very touchy
     os.environ['LANG'] = 'en_US.UTF8'
     if filename.endswith(b'.pdf'):
-        pdf = PdfReader(filename.decode('utf-8'))
-        for page in pdf.pages:
-            data.append(page.extract_text())
+        pdf = pymupdf.open(filename.decode('utf-8'))
+        for page in pdf:
+            data.append(page.get_text())
         os.remove(filename)
-        return sha1, '\n'.join(data)
+        return sha1, data
     # FIXME: check return code
     ls = subprocess.Popen([ 'djvutxt', filename, '--detail=page'], stdout=subprocess.PIPE, close_fds = True)
     text = ls.stdout.read()
