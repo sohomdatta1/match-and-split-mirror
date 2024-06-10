@@ -16,6 +16,8 @@ if not os.environ.get('NOTDEV'):
     from dotenv import load_dotenv
     load_dotenv()
     app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
+else:
+    app.config['SECRET_KEY'] = os.environ.get('SECRET_KEY')
 
 inspect = celery_app.control.inspect()
 
