@@ -12,7 +12,7 @@ export default defineConfig({
     rollupOptions: {
         input: [
           "client-src/script.ts",
-          "client-src/style.less",
+          "client-src/styles.less",
         ],
     },
     emptyOutDir: true,

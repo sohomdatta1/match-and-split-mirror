@@ -5,7 +5,7 @@ def init_db():
     initdbconn = sql.connections.Connection(user=config['username'], password=config['password'], host=config['host'])
     with initdbconn.cursor() as cursor:
         cursor.execute(f'CREATE DATABASE IF NOT EXISTS {config["username"]}__match_and_split;')
-        cursor.execute(f'USE {config["username"]}__wsstats_p')
+        cursor.execute(f'USE {config["username"]}__match_and_split;')
         cursor.execute('''CREATE TABLE IF NOT EXISTS `jobs` (
             `id` INT NOT NULL AUTO_INCREMENT,
             `type` VARCHAR(255) NOT NULL,
@@ -19,5 +19,6 @@ def init_db():
     initdbconn.close()
     
 def get_conn():
+    init_db()
     dbconn = sql.connections.Connection(user=config['username'], password=config['password'], host=config['host'], database=f'{config["username"]}__match_and_split')
     return dbconn

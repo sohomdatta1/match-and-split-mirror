@@ -8,7 +8,6 @@ import utils
 from toolsdb import get_conn
 from uuid import uuid4 as uuid
 from logger import Logger
-import sys
 
 import pywikibot
 
@@ -77,7 +76,7 @@ def do_match(mysite, maintitle, user, codelang, logger):
         logger.log("no prefix")
         return ret_val(E_ERROR, "no prefix")
 
-    print("M&S:do_match() called with mysite = ", mysite, "maintitle = ", maintitle, "user = ", user, "codelang = ", codelang, "and prefix =", prefix)
+    print("M&S:do_match() called with mysite = ", mysite, " maintitle = ", maintitle, " user = ", user, " codelang = ", codelang, " and prefix =", prefix)
     logger.log("M&S:do_match() called with mysite = " + str(mysite) + "maintitle = " + str(maintitle) + "user = " + str(user) + "codelang = " + str(codelang) + "and prefix =" + str(prefix))
 
     page = pywikibot.Page(mysite, maintitle)
@@ -206,7 +205,7 @@ def do_split(mysite, rootname, user, codelang, logger):
     if not prefix:
         logger.log("no Page: prefix")
         return ret_val(E_ERROR, "no Page: prefix")
-    logger.log("M&S:do_split() called with mysite = " + str(mysite) + "rootname = " + str(rootname) + "user = " + str(user) + "codelang = " + str(codelang) + "and prefix =" + str(prefix))
+    logger.log("M&S:do_split() called with mysite = " + str(mysite) + " rootname = " + str(rootname) + " user = " + str(user) + " codelang = " + str(codelang) + " and prefix =" + str(prefix))
     print("M&S:do_split() called with mysite = ", mysite, "rootname = ", rootname, "user = ", user, "codelang = ", codelang, "and prefix =", prefix)
 
     try:
@@ -356,31 +355,45 @@ def do_split(mysite, rootname, user, codelang, logger):
     return ret_val(E_OK, "")
 
 @shared_task
-def match(lang, title, username) -> None:
+def match(lang, title, username, log_file, jid) -> None:
     site = pywikibot.Site(lang, 'wikisource')
-    log_file = f'{uuid()}.log'
     logger = Logger(log_file)
+    print((str(jid), log_file, lang, title, username))
     with get_conn() as conn:
         with conn.cursor() as cursor:
-            cursor.execute('''UPDATE jobs SET status = 'running', logfile = %s WHERE type = 'match' AND lang = %s AND title = %s AND username = %s''', (log_file, lang, title, username))
+            cursor.execute(
+                '''UPDATE jobs SET status = 'running', logfile = %s WHERE id= %s AND type = 'match' AND lang = %s AND title = %s AND username = %s''', 
+                (log_file, str(jid), lang, title, username)
+            )
         conn.commit()
-    do_match(site, title, username, lang, logger)
+    try:
+        do_match(site, title, username, lang, logger)
+    except Exception as e:
+        logger.log(str(e))
+        utils.print_traceback("Error in split", logger)
     with get_conn() as conn:
         with conn.cursor() as cursor:
-            cursor.execute('''UPDATE jobs SET status = 'done' WHERE type = 'match' AND lang = %s AND title = %s AND username = %s''', (lang, title, username))
+            cursor.execute('''UPDATE jobs SET status = 'done' WHERE id=%s AND type = 'match' AND lang =%s AND title = %s AND username = %s''', (str(jid), lang, title, username))
         conn.commit()
 
 @shared_task
-def split(lang, title, username) -> None:
+def split(lang, title, username, log_file, jid) -> None:
     site = pywikibot.Site(lang,'wikisource')
-    log_file = f'{uuid()}.log'
     logger = Logger(log_file)
+    print((str(jid), log_file, lang, title, username))
     with get_conn() as conn:
         with conn.cursor() as cursor:
-            cursor.execute('''UPDATE jobs SET status = 'running', logfile = %s WHERE type = 'split' AND lang = %s AND title = %s AND username = %s''', (log_file, lang, title, username))
+            cursor.execute(
+                '''UPDATE jobs SET status = 'running', logfile = %s WHERE id=%s AND type = 'split' AND lang = %s AND title = %s AND username = %s''', 
+                (log_file, str(jid), lang, title, username)
+            )
         conn.commit()
-    do_split(site, title, username, lang, logger)
+    try:
+        do_split(site, title, username, lang, logger)
+    except Exception as e:
+        logger.log(str(e))
+        utils.print_traceback("Error in split", logger)
     with get_conn() as conn:
         with conn.cursor() as cursor:
-            cursor.execute('''UPDATE jobs SET status = 'done' WHERE type = 'split' AND lang = %s AND title = %s AND username = %s''', (lang, title, username))
+            cursor.execute('''UPDATE jobs SET status = 'done' WHERE id= %s AND type = 'split' AND lang = %s AND title = %s AND username = %s''', (str(jid), lang, title, username))
         conn.commit()

@@ -34,8 +34,8 @@ def unquote_text_from_djvu(text):
     text = text.rstrip('\n')
     return text
 
-def extract_djvu_text(url, filename, sha1):
-    print("Extracting text layer from file: " + filename)
+def extract_djvu_text(url, filename, sha1, logger):
+    logger.log("Extracting text layer from file: " + filename)
 
     if type(filename) == type(''):
         filename = filename.encode('utf-8')
@@ -45,12 +45,12 @@ def extract_djvu_text(url, filename, sha1):
     data = []
     # GTK app are very touchy
     os.environ['LANG'] = 'en_US.UTF8'
-    if filename.endswith('.pdf'):
-        pdf = PdfReader(filename)
+    if filename.endswith(b'.pdf'):
+        pdf = PdfReader(filename.decode('utf-8'))
         for page in pdf.pages:
             data.append(page.extract_text())
         os.remove(filename)
-        return sha1, data
+        return sha1, '\n'.join(data)
     # FIXME: check return code
     ls = subprocess.Popen([ 'djvutxt', filename, '--detail=page'], stdout=subprocess.PIPE, close_fds = True)
     text = ls.stdout.read()
@@ -90,7 +90,7 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step, logge
     offset = 0
     output = ""
     is_poem = False
-
+    logger.log("Cached text =" + str(cached_text))
 #    print(number, file=sys.stderr)
 #    print(step, file=sys.stderr)
 #    print(((step+1)//2), file=sys.stderr)
@@ -135,7 +135,7 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step, logge
         #print i, ccc, ratio
 
         if ratio < 0.1:
-            logger.log("low ratio", ratio)
+            logger.log("low ratio= " + str(ratio))
             print("low ratio", ratio)
             break
         mstr = ""
@@ -246,10 +246,12 @@ def get_djvu(mysite, djvuname, logger):
 #            url = filepage.fileUrl()
         url = filepage.get_file_url()
         print("File URL: " + url)
+        logger.log("File URL: " + url)
 #            obj = extract_djvu_text(url, djvuname, filepage.getFileSHA1Sum())
-        obj = extract_djvu_text(url, djvuname, filepage.latest_file_info.sha1)
+        obj = extract_djvu_text(url, djvuname, filepage.latest_file_info.sha1, logger)
     except:
-        utils.print_traceback(logger, "extract_djvu_text() fail")
+        utils.print_traceback("extract_djvu_text() fail", logger)
         obj = None
+        return ''
 
     return obj[1]

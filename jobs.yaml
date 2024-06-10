@@ -4,6 +4,7 @@
   command: "mascelery"
   image: tool-matchandsplit/tool-matchandsplit:latest
   continuous: true
+  mount: all
   health-check-script: "launcher ping"
   emails: all
   mem: 3Gi

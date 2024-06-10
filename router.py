@@ -2,12 +2,14 @@ import os
 
 import mwoauth
 import mwoauth.flask
-from flask import redirect, request, send_file, session, url_for
+from flask import redirect, request, send_file, session, url_for, render_template
 
 from app import celery as celery_app
 from app import flask_app as app
 from matchandsplit import match, split
 from toolsdb import init_db, get_conn
+from logger import get_log_file
+from uuid import uuid4 as uuid
 init_db()
 
 if not os.environ.get('NOTDEV'):
@@ -22,41 +24,66 @@ def match_route():
     if session.get('username') is None:
         return redirect(url_for('login', referrer='/match'))
     if request.method == 'GET':
-        return send_file('match.html')
+        return render_template(
+            'match.html',
+            username=session['username'],
+            type='match')
     username = session['username']
     lang = request.form['lang']
     title = request.form['title']
+    log_file = f'{uuid()}.log'
     with get_conn() as conn:
         with conn.cursor() as cursor:
             cursor.execute('''INSERT INTO jobs 
                 (type, lang, title, username, status)
-                VALUES (%s, %s, %s, %s)''', 
+                VALUES (%s, %s, %s, %s, %s)''', 
                 ('match', lang, title, username, 'queued'))
+            jid = cursor.lastrowid
         conn.commit()
-    match.delay(lang, title, username)
-    return {'status': 'recieved'}
+    match.delay(lang, title, username, log_file, jid)
+    return {'status': 'recieved', 'log_file': log_file, 'jid': jid}
 
 @app.route('/split', methods=['POST', 'GET'])
 def split_route():
     if session.get('username') is None:
         return redirect(url_for('login', referrer='/split'))
     if request.method == 'GET':
-        return send_file('split.html')
+        return render_template(
+            'split.html',
+            username=session['username'],
+            type='split')
     lang = request.form['lang']
     title = request.form['title']
     username  = session['username']
+    log_file = f'{uuid()}.log'
     with get_conn() as conn:
         with conn.cursor() as cursor:
             cursor.execute('''INSERT INTO jobs 
                 (type, lang, title, username, status)
-                VALUES (%s, %s, %s, %s)''', 
-                ('match', lang, title, username, 'queued'))
+                VALUES (%s, %s, %s, %s, %s)''', 
+                ('split', lang, title, username, 'queued'))
+            jid = cursor.lastrowid
         conn.commit()
-    split.delay(lang, title, username)
-    return {'status': 'recieved'}
+    split.delay(lang, title, username, log_file, jid)
+    return {'status': 'recieved', 'log_file': log_file, 'jid': jid}
+
+@app.route('/goto')
+def goto():
+    if session.get('username') is None:
+        return redirect(url_for('login', referrer='/goto'))
+    target = request.args.get('tab')
+    if target == 'match':
+        return redirect(url_for('match_route'))
+    if target == 'split':
+        return redirect(url_for('split_route'))
+    if target == 'status':
+        return redirect(url_for('status'))
+    if target == 'documentation':
+        return redirect('https://en.wikisource.org/wiki/Help:Match_and_split')
+    return redirect(url_for(target))
 
 @app.route('/internal-status')
-def all_status():
+def all_internal_status():
     html = open('status.html').read()
     start = 'Tasks in queue: ' + str( len(inspect.active()['worker@mas-sodium']) + len(inspect.scheduled()['worker@mas-sodium']) + len(inspect.reserved()['worker@mas-sodium']) )
     table = '<table class="wikitable"><tbody><tr><th>Task name</th><th>Language</th><th>Title</th><th>Username</th></tr>'
@@ -70,15 +97,46 @@ def all_status():
     table += '</tbody></table>'
     return html + start + table
 
+@app.route('/logs')
+def logs():
+    if session.get('username') is None:
+        return redirect(url_for('login', referrer='/logs'))
+    logfile = request.args.get('file')
+    if not logfile:
+        return 'No log file specified'
+    if not os.path.exists(get_log_file(logfile)):
+        return 'Log file not found'
+    return render_template('logs.html', log=open(get_log_file(logfile)).read(), username=session['username'], type='logs', log_name=logfile)
+
 @app.route('/status/json')
 def all_status_json():
     return { 'active': inspect.active()['worker@mas-sodium'], 'scheduled': inspect.scheduled()['worker@mas-sodium'], 'reserved': inspect.reserved()['worker@mas-sodium'] }
 
+@app.route('/status')
+def status():
+    if session.get('username') is None:
+        return redirect(url_for('login', referrer='/status'))
+    with get_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT * FROM jobs WHERE username = %s', (session['username'],))
+            jobs = cursor.fetchall()
+    jobs = sorted(jobs, key=lambda x: x[0], reverse=True)
+    return render_template('status.html', jobs=jobs, username=session['username'], type='status')
+
+@app.route('/all-status')
+def all_status():
+    if session.get('username') is None:
+        return redirect(url_for('login', referrer='/status'))
+    with get_conn() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute('SELECT * FROM jobs')
+            jobs = cursor.fetchall()
+    jobs = sorted(jobs, key=lambda x: x[0], reverse=True)
+    return render_template('all_status.html', jobs=jobs, username=session['username'], type='allstatus')
+
 @app.route('/')
 def index():
-    return """
-    This is experimental API for match and split. <a href="/match">/match</a> and <a href="/split">/split</a> are the two endpoints.<br>
-    If the bot is taking too long, check to make sure that <a href="/status">/status</a> still has tasks in the queue. <br><br><b>You are responsible for verifying the results.</b>"""
+    return render_template('index.html', username=session.get('username'), type='index')
 
 @app.route('/login')
 def login():
@@ -140,4 +198,4 @@ def logout():
     return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(debug=True, host='0.0.0.0', port=1238)
+    app.run(debug=True, host='0.0.0.0', port=8000)
