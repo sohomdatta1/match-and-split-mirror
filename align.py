@@ -60,11 +60,11 @@ def extract_djvu_text(url, filename, sha1, logger):
 #    print(text, file=sys.stderr)
 #    print("------ end djvutxt -----", file=sys.stderr)
 
-    for t in re.finditer('\((page -?\d+ -?\d+ -?\d+ -?\d+[ \n]+"(.*)"[ ]*|)\)\n', text):
+    for t in re.finditer(r'\((page -?\d+ -?\d+ -?\d+ -?\d+[ \n]+"(.*)"[ ]*|)\)\n', text):
 #        t = str(t.group(1), 'utf-8', 'replace')
         t = t.group(1)
-        t = re.sub('^page \d+ \d+ \d+ \d+[ \n]+"', '', t)
-        t = re.sub('"[ ]*$', '', t)
+        t = re.sub(r'^page \d+ \d+ \d+ \d+[ \n]+"', '', t)
+        t = re.sub(r'"[ ]*$', '', t)
         t = unquote_text_from_djvu(t)
 #        print("------ APPENDING PAGE -----", file=sys.stderr)
 #        print(t, file=sys.stderr)
