@@ -21,6 +21,6 @@ class Logger:
 
 def get_log_file(file_name):
     if os.environ.get('NOTDEV'):
-        return f'{os.environ.get("TOOLS_DATA_DIR")}/logs/{file_name}.log'
+        return f'{os.environ.get("TOOL_DATA_DIR")}/logs/{file_name}.log'
     else:
         return f'./logs/{file_name}'
