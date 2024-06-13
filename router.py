@@ -71,9 +71,9 @@ def split_route():
 
 @app.route('/goto')
 def goto():
-    if session.get('username') is None:
-        return redirect(url_for('login', referrer='/goto'))
     target = request.args.get('tab')
+    if session.get('username') is None:
+        return redirect(url_for('login', referrer='/goto?tab=' + target))
     if target == 'match':
         return redirect(url_for('match_route'))
     if target == 'split':
