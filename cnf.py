@@ -18,6 +18,8 @@ else:
     user = os.environ.get( 'TOOL_TOOLSDB_USER' )
     password = os.environ.get( 'TOOL_TOOLSDB_PASSWORD' )
 
+if os.environ.get( 'DOCKER' ):
+    remote = 'mariadb'
 
 config = {
     'host': remote,

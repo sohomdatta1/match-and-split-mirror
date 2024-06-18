@@ -34,3 +34,4 @@ user-config.py
 throttle.ctrl
 .env
 replica.my.cnf
+data/
