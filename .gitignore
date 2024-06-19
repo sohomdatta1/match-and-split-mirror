@@ -35,3 +35,4 @@ throttle.ctrl
 .env
 replica.my.cnf
 data/
+.tokens

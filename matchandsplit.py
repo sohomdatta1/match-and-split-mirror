@@ -103,9 +103,9 @@ def do_match(mysite, maintitle, user, codelang, logger):
             content = bl[i*2+2]
             filename, pagenum = title.split('/')
             if i == 0:
-                cached_text = align.get_djvu(mysite, filename, logger)
+                cached_text = align.get_file(mysite, filename, logger)
             else:
-                cached_text = align.get_djvu(mysite, filename, logger)
+                cached_text = align.get_file(mysite, filename, logger)
             if not cached_text:
                 logger.log("Erreur : fichier absent, no cached_text")
                 return ret_val(E_ERROR, "Erreur : fichier absent")
@@ -188,7 +188,7 @@ def do_match(mysite, maintitle, user, codelang, logger):
         logger.log("Error : __MATCH__ : no page number")
         return ret_val(E_ERROR, "illformed __MATCH__: no page number ?")
 
-    cached_text = align.get_djvu(mysite, djvuname, logger)
+    cached_text = align.get_file(mysite, djvuname, logger)
     if not cached_text:
         logger.log("Error : unable to read djvu, if the File: exists, please retry")
         return ret_val(E_ERROR, "unable to read djvu, if the File: exists, please retry")

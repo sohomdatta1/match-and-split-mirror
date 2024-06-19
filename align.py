@@ -232,10 +232,10 @@ def do_match(target, cached_text, djvuname, number, verbose, prefix, step, logge
 # file with the same name but different contents. In this case the cache will
 # be ineffective but no wrong data can be used as we check its sha1.
 # SOHOM: Remove caching
-def get_djvu(mysite, djvuname, logger):
+def get_file(mysite, djvuname, logger):
 
-    print("get_djvu", repr(djvuname))
-    logger.log("get_djvu: %s" % djvuname)
+    print("get_file", repr(djvuname))
+    logger.log("get_file: %s" % djvuname)
 
     djvuname = djvuname.replace(" ", "_")
     filepage = copy_file.get_filepage(mysite, djvuname)
