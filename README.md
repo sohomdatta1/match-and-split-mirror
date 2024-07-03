@@ -16,15 +16,15 @@ The match and split tool provides a GUI to initiate jobs on the server that take
 ### Without Docker
 
 Follow these steps to get the tool running locally
-- Set environment variables by copying values from the `.env.tmpl` file into a `.env` file
-- Set configuration variables by copying values from the `replica.my.cnf.tmpl` file into a `replica.my.cnf` file. These will be used to access the database.
-- Install npm packages using `npm ci`
-- Install python packages required for the project from the `requirements.txt` file by running the command `pip install -r requirements.txt`
+- Set environment variables by copying values from the `.env.tmpl` file into a `.env` file.
+- Set configuration variables by copying values from the `replica.my.cnf.tmpl` file into a `.replica.my.cnf` file. These will be used to access the database.
+- Install npm packages using `npm ci`.
+- Install python packages required for the project from the `requirements.txt` file by running the command `pip install -r requirements.txt`.
   > It is recommended to create a python environment for this project before installing Python packages ([more details](https://packaging.python.org/en/latest/guides/installing-using-pip-and-virtual-environments/#create-and-use-virtual-environments))
 - Before running the project, ensure the following are already running in the background
   - MySQL service
   - Redis service
-- Then, run `./scripts/run_dev_env.sh` to see the tool on your browser at `http://0.0.0.0:8000/`
+- Then, run `./scripts/run_dev_env.sh` to see the tool on your browser at `http://0.0.0.0:8000/`.
 
 ### With Docker
 
