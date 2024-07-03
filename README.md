@@ -4,16 +4,16 @@ The match and split tool provides a GUI to initiate jobs on the server that take
 
 # Local setup
 
-### Prerequisites
+## Prerequisites
 
 - Python
 - NodeJS
 - Redis
 - MySQL (MariaDB)
 
-### Get it running
+## Get it running
 
-## Without Docker
+### Without Docker
 
 Follow these steps to get the tool running locally
 - Set environment variables by copying values from the `.env.tmpl` file into a `.env` file
@@ -26,7 +26,7 @@ Follow these steps to get the tool running locally
   - Redis service
 - Then, run `./scripts/run_dev_env.sh` to see the tool on your browser at `http://0.0.0.0:8000/`
 
-## With Docker
+### With Docker
 
 TBA
 
